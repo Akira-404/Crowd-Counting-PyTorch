@@ -60,9 +60,11 @@ for path in path_sets:
 for img_path in img_paths:
     # for every image
     print('image path: ', img_path)
-    mat = io.loadmat(img_path.replace('.jpg', '.mat').replace('images', 'ground_truth').replace('IMG_', 'GT_IMG_'))
+    mat = io.loadmat(img_path.replace('.jpg', '.mat').replace('images', 'ground-truth').replace('IMG_', 'GT_IMG_'))
     img = plt.imread(img_path)
     k = np.zeros((img.shape[0], img.shape[1]))
+
+    # 坐标值 [people_num,(x,y)]
     gt = mat["image_info"][0, 0][0, 0][0]
 
     for i in range(0, len(gt)):
@@ -71,7 +73,7 @@ for img_path in img_paths:
 
     k = gaussian_filter_density(k)
     # save the Density Maps GT as h5 format
-    with h5py.File(img_path.replace('.jpg', '.h5').replace('images', 'ground_truth'), 'w') as hf:
+    with h5py.File(img_path.replace('.jpg', '.h5').replace('images', 'ground-truth'), 'w') as hf:
         hf['density'] = k
 
 # now generate the ShanghaiB's ground truth
