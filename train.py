@@ -1,15 +1,10 @@
-"""
-SKT distillation
-"""
 import sys
 import os
+import argparse
+import json
+import time
 
-from models.model_teacher_vgg import CSRNet as CSRNet_teacher
-from models.model_student_vgg import CSRNet as CSRNet_student
-
-from utils import save_checkpoint, cal_para
-from models.distillation import cosine_similarity, scale_process, cal_dense_fsp
-
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -17,11 +12,12 @@ import torch.functional as F
 from torch.autograd import Variable
 from torchvision import datasets, transforms
 
-import numpy as np
-import argparse
-import json
 import mydataset
-import time
+from models.model_teacher_vgg import CSRNet as CSRNet_teacher
+from models.model_student_vgg import CSRNet as CSRNet_student
+from models.distillation import cosine_similarity, scale_process, cal_dense_fsp
+from utils import save_checkpoint, cal_para
+from utils import AverageMeter
 
 parser = argparse.ArgumentParser(description='CSRNet-SKT distillation')
 parser.add_argument('--train_json', metavar='TRAIN', default='./preprocess/A_train.json',
@@ -51,7 +47,6 @@ parser.add_argument('--out', metavar='OUTPUT', type=str, default='./save',
 parser.add_argument('--use_gpu', '-ug', type=bool, default=False,
                     help='use gpu training ot not')
 
-# global args
 args = parser.parse_args()
 
 CUDA = True if args.use_gpu and torch.cuda.is_available() else False
@@ -167,11 +162,12 @@ def train(train_list: list, teacher, student, criterion, optimizer, epoch):
     losses_cos = AverageMeter()
     batch_time = AverageMeter()
     data_time = AverageMeter()
-    transforms_ = transforms.Compose([transforms.ToTensor(),
+
+    transform = transforms.Compose([transforms.ToTensor(),
                                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                            std=[0.229, 0.224, 0.225])])
     dataset = mydataset.listDataset(train_list,
-                                    transform=transforms_,
+                                    transform=transform,
                                     train=True,
                                     seen=student.seen)
 
@@ -255,11 +251,11 @@ def train(train_list: list, teacher, student, criterion, optimizer, epoch):
 
 def val(val_list: list, model):
     print('begin val')
-    transforms_ = transforms.Compose([transforms.ToTensor(),
+    transform = transforms.Compose([transforms.ToTensor(),
                                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                            std=[0.229, 0.224, 0.225])])
     dataset = mydataset.listDataset(val_list,
-                                    transform=transforms_,
+                                    transform=transform,
                                     train=False)
     val_loader = DataLoader(dataset,
                             num_workers=args.workers,
@@ -297,11 +293,11 @@ def val(val_list: list, model):
 
 def test(test_list: list, model):
     print('testing current model...')
-    transforms_ = transforms.Compose([transforms.ToTensor(),
+    transform = transforms.Compose([transforms.ToTensor(),
                                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                            std=[0.229, 0.224, 0.225]), ])
     dataset = mydataset.listDataset(test_list,
-                                    transform=transforms_, train=False)
+                                    transform=transform, train=False)
     test_loader = DataLoader(dataset,
                              num_workers=args.workers,
                              shuffle=False,
@@ -331,25 +327,6 @@ def test(test_list: list, model):
     mae = mae / N
     mse = torch.sqrt(mse / N)
     print('Test * MAE {mae:.3f} * MSE {mse:.3f} '.format(mae=mae, mse=mse))
-
-
-class AverageMeter(object):
-    """Computes and stores the average and current value"""
-
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
 
 
 if __name__ == '__main__':

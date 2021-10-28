@@ -1,39 +1,32 @@
 import math
-import sys
 import os
-import glob
-import warnings
+import argparse
+import json
+import time
+
 import cv2
 import h5py
 import numpy as np
-import scipy.io as io
-from matplotlib import pyplot as plt
 from PIL import Image
+from matplotlib import pyplot as plt
+import torch
+from torch.autograd import Variable
+from torchvision import datasets, transforms
+
+import mydataset
 from models.model_vgg import CSRNet as CSRNet_vgg
 from models.model_student_vgg import CSRNet as CSRNet_student
-
 from utils import save_checkpoint
 from utils import cal_para, crop_img_patches, get_use_time
 
-import torch
-import torch.nn as nn
-from torch.autograd import Variable
-from torchvision import datasets, transforms
-import json
-
-import numpy as np
-import argparse
-import json
-import dataset
-import time
-
 parser = argparse.ArgumentParser(description='PyTorch CSRNet')
 
-parser.add_argument('--test_json','-tj', metavar='TEST', default='preprocess/A_test.json',
+parser.add_argument('--test_json', '-tj', metavar='TEST', default='preprocess/A_test.json',
                     help='path to test json')
 parser.add_argument('--dataset', '-d', default='', type=str,
                     help='Shanghai/UCF/Other')
-parser.add_argument('--checkpoint', '-c', metavar='CHECKPOINT', default='CSRNet_models/partA_student.pth.tar', type=str,
+parser.add_argument('--checkpoint', '-c', metavar='CHECKPOINT', default='CSRNet_models_weights/partA_student.pth.tar',
+                    type=str,
                     help='path to the checkpoint')
 parser.add_argument('--version', '-v', default='quarter_vgg', type=str,
                     help='vgg/quarter_vgg')
@@ -48,12 +41,12 @@ args = parser.parse_args()
 
 # Type Config
 Path = str
-CvImgType = np.ndarray
+CvImg = np.ndarray
 CUDA_AVAILABLE = torch.cuda.is_available()
 
 
-def main():
-    global args, best_prec1
+def main(args):
+    global best_prec1
 
     # args.batch_size = 1
     # args.workers = 4
@@ -61,7 +54,7 @@ def main():
 
     if CUDA_AVAILABLE:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-        torch.cuda.manual_seed(args.seed)
+        torch.cuda.manual_seed(int(args.seed))
 
     if args.version == 'vgg':
         print('VGG')
@@ -127,7 +120,7 @@ def test(model):
     mse = 0
 
     for i, (h5_item, img_item) in enumerate(zip(h5_set, test_list)):
-        with h5py.File(h5_item, 'r')as f:
+        with h5py.File(h5_item, 'r') as f:
             density_img = f['density'][:]
 
             img = Image.open(img_item).convert('RGB')
@@ -135,7 +128,8 @@ def test(model):
             img = torch.unsqueeze(img, 0)
 
             model.eval()
-            img = Variable(img.cuda()) if CUDA_AVAILABLE else ...
+            img = img.cuda() if CUDA_AVAILABLE else img
+            img = Variable(img)
 
             with torch.no_grad():
                 output = model(img)
@@ -186,14 +180,14 @@ def test_ucf(model):
     with open(args.test_json, 'r') as outfile:
         test_list = json.load(outfile)
     test_loader = torch.utils.data.DataLoader(
-        dataset.listDataset(test_list,
-                            transform=transforms.Compose([
-                                transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                            std=[0.229, 0.224, 0.225]),
-                            ]),
-                            train=False,
-                            dataset='ucf_test',
-                            ),
+        mydataset.listDataset(test_list,
+                              transform=transforms.Compose([
+                                  transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                                              std=[0.229, 0.224, 0.225]),
+                              ]),
+                              train=False,
+                              dataset='ucf_test',
+                              ),
         shuffle=False,
         batch_size=1)
 
@@ -226,7 +220,7 @@ def test_ucf(model):
 
 
 @get_use_time
-def run_model(img: [Path, CvImgType], model) -> int:
+def run_model(img: [Path, CvImg], model) -> int:
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -238,14 +232,15 @@ def run_model(img: [Path, CvImgType], model) -> int:
         else:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-    elif isinstance(img, CvImgType):
+    elif isinstance(img, CvImg):
         img = img
 
     img = transform(img)
     img = torch.unsqueeze(img, 0)
 
     model.eval()
-    img = Variable(img.cuda()) if CUDA_AVAILABLE else ...
+    img = img.cuda() if CUDA_AVAILABLE else img
+    img = Variable(img)
 
     with torch.no_grad():
         output = model(img)
@@ -254,4 +249,4 @@ def run_model(img: [Path, CvImgType], model) -> int:
 
 
 if __name__ == '__main__':
-    main()
+    main(args)

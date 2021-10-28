@@ -28,7 +28,7 @@ parser.add_argument('--test_json', metavar='TEST', default='preprocess/A_test.js
                     help='path to test json')
 parser.add_argument('--dataset', '-d', default='Shanghai', type=str,
                     help='Shanghai/UCF')
-parser.add_argument('--checkpoint', '-c', metavar='CHECKPOINT', default='CSRNet_models/partA_student.pth.tar', type=str,
+parser.add_argument('--checkpoint', '-c', metavar='CHECKPOINT', default='CSRNet_models_weights/partA_student.pth.tar', type=str,
                     help='path to the checkpoint')
 parser.add_argument('--version', '-v', default='quarter_vgg', type=str,
                     help='vgg/quarter_vgg')

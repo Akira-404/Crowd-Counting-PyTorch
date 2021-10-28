@@ -1,4 +1,4 @@
-#import h5py
+# import h5py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,6 +10,7 @@ import numpy as np
 import base64
 import cv2
 import h5py
+
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -129,6 +130,10 @@ def get_use_time(func):
         return res
 
     return wrapper
+
+
+def model2onnx():
+    ...
 
 
 # 构建接口返回结果
