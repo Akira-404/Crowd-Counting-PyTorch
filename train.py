@@ -4,8 +4,6 @@ SKT distillation
 import sys
 import os
 
-import warnings
-
 from models.model_teacher_vgg import CSRNet as CSRNet_teacher
 from models.model_student_vgg import CSRNet as CSRNet_student
 
@@ -14,6 +12,7 @@ from models.distillation import cosine_similarity, scale_process, cal_dense_fsp
 
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 import torch.functional as F
 from torch.autograd import Variable
 from torchvision import datasets, transforms
@@ -21,7 +20,7 @@ from torchvision import datasets, transforms
 import numpy as np
 import argparse
 import json
-import dataset
+import mydataset
 import time
 
 parser = argparse.ArgumentParser(description='CSRNet-SKT distillation')
@@ -35,11 +34,11 @@ parser.add_argument('--lr', default=0.0004, type=float,
                     help='learning rate')
 # parser.add_argument('--teacher', '-t', default=None, type=str,
 #                     help='teacher net version')
-parser.add_argument('--teacher_ckpt', '-tc', default='./CSRNet_models/partA_teacher.pth.tar', type=str,
+parser.add_argument('--teacher_ckpt', '-tc', default='./CSRNet_models_weights/partA_teacher.pth.tar', type=str,
                     help='teacher checkpoint')
 # parser.add_argument('--student', '-s', default=None, type=str,
 #                     help='student net version')
-parser.add_argument('--student_ckpt', '-sc', default='./CSRNet_models/partA_student.pth.tar', type=str,
+parser.add_argument('--student_ckpt', '-sc', default='./CSRNet_models_weights/partA_student.pth.tar', type=str,
                     help='student checkpoint')
 parser.add_argument('--lamb_fsp', '-laf', type=float, default=0.5,
                     help='weight of dense fsp loss')
@@ -52,12 +51,19 @@ parser.add_argument('--out', metavar='OUTPUT', type=str, default='./save',
 parser.add_argument('--use_gpu', '-ug', type=bool, default=False,
                     help='use gpu training ot not')
 
-global args
+# global args
 args = parser.parse_args()
 
+CUDA = True if args.use_gpu and torch.cuda.is_available() else False
 
-def main():
-    global args, mae_best_prec1, mse_best_prec1
+
+def main(args):
+    if CUDA:
+        print('Use GPU Train')
+    else:
+        print("Not Use GPU Train")
+
+    global mae_best_prec1, mse_best_prec1
 
     mae_best_prec1 = 1e6
     mse_best_prec1 = 1e6
@@ -78,13 +84,10 @@ def main():
         test_list = json.load(outfile)
 
     print('===Read Train Test Val json file===')
-    if args.use_gpu:
-        print('Use GPU Train')
-    else:
-        print("Not Use GPU Train")
-    if torch.cuda.is_available() and args.use_gpu:
+
+    if CUDA:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-        torch.cuda.manual_seed(args.seed)
+        torch.cuda.manual_seed(int(args.seed))
 
     teacher = CSRNet_teacher()
     student = CSRNet_student(ratio=4)
@@ -92,7 +95,8 @@ def main():
 
     teacher.regist_hook()  # use hook to get teacher's features
 
-    if torch.cuda.is_available() and args.use_gpu:
+    # if torch.cuda.is_available() and args.use_gpu:
+    if CUDA:
         teacher = teacher.cuda()
         student = student.cuda()
 
@@ -108,8 +112,8 @@ def main():
             print("=> loading checkpoint '{}'".format(args.teacher_ckpt))
             checkpoint = torch.load(args.teacher_ckpt)
             teacher.load_state_dict(checkpoint['state_dict'])
-            print("=> loaded checkpoint '{}' (epoch {})"
-                  .format(args.teacher_ckpt, checkpoint['epoch']))
+
+            print("=> loaded checkpoint '{}' (epoch {})".format(args.teacher_ckpt, checkpoint['epoch']))
         else:
             print("=> no checkpoint found at '{}'".format(args.teacher_ckpt))
 
@@ -122,12 +126,14 @@ def main():
                 mae_best_prec1 = checkpoint['best_prec1']
             else:
                 mae_best_prec1 = checkpoint['mae_best_prec1']
+
             if 'mse_best_prec1' in checkpoint.keys():
                 mse_best_prec1 = checkpoint['mse_best_prec1']
+
             student.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
-            print("=> loaded checkpoint '{}' (epoch {})"
-                  .format(args.student_ckpt, checkpoint['epoch']))
+
+            print("=> loaded checkpoint '{}' (epoch {})".format(args.student_ckpt, checkpoint['epoch']))
         else:
             print("=> no checkpoint found at '{}'".format(args.student_ckpt))
 
@@ -154,26 +160,27 @@ def main():
             test(test_list, student)
 
 
-def train(train_list, teacher, student, criterion, optimizer, epoch):
+def train(train_list: list, teacher, student, criterion, optimizer, epoch):
     losses_h = AverageMeter()
     losses_s = AverageMeter()
     losses_fsp = AverageMeter()
     losses_cos = AverageMeter()
     batch_time = AverageMeter()
     data_time = AverageMeter()
-    train_loader = torch.utils.data.DataLoader(
-        dataset.listDataset(train_list,
-                            transform=transforms.Compose([
-                                transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                            std=[0.229, 0.224, 0.225]),
-                            ]),
-                            train=True,
-                            seen=student.seen,
-                            ),
-        num_workers=args.workers,
-        shuffle=True,
-        batch_size=args.batch_size)
+    transforms_ = transforms.Compose([transforms.ToTensor(),
+                                      transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                           std=[0.229, 0.224, 0.225])])
+    dataset = mydataset.listDataset(train_list,
+                                    transform=transforms_,
+                                    train=True,
+                                    seen=student.seen)
+
+    train_loader = DataLoader(dataset,
+                              num_workers=args.workers,
+                              shuffle=True,
+                              batch_size=args.batch_size)
     print('epoch %d, lr %.10f %s' % (epoch, args.lr, args.out))
+
     teacher.eval()
     student.train()
     end = time.time()
@@ -181,14 +188,14 @@ def train(train_list, teacher, student, criterion, optimizer, epoch):
     for i, (img, target) in enumerate(train_loader):
         data_time.update(time.time() - end)
 
-        if torch.cuda.is_available() and args.use_gpu:
-            img = img.cuda()
+        # if torch.cuda.is_available() and args.use_gpu:
+        img = img.cuda() if CUDA else img
         img = Variable(img)
 
         target = target.type(torch.FloatTensor)
 
-        if torch.cuda.is_available() and args.use_gpu:
-            target = target.cuda()
+        # if torch.cuda.is_available() and args.use_gpu:
+        target = target.cuda() if CUDA else target
         target = Variable(target)
 
         with torch.no_grad():
@@ -246,17 +253,18 @@ def train(train_list, teacher, student, criterion, optimizer, epoch):
                 loss_fsp=losses_fsp, loss_kl=losses_cos))
 
 
-def val(val_list, model):
+def val(val_list: list, model):
     print('begin val')
-    val_loader = torch.utils.data.DataLoader(
-        dataset.listDataset(val_list,
-                            transform=transforms.Compose([
-                                transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                            std=[0.229, 0.224, 0.225]),
-                            ]), train=False),
-        num_workers=args.workers,
-        shuffle=False,
-        batch_size=args.batch_size)
+    transforms_ = transforms.Compose([transforms.ToTensor(),
+                                      transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                           std=[0.229, 0.224, 0.225])])
+    dataset = mydataset.listDataset(val_list,
+                                    transform=transforms_,
+                                    train=False)
+    val_loader = DataLoader(dataset,
+                            num_workers=args.workers,
+                            shuffle=False,
+                            batch_size=args.batch_size)
 
     model.eval()
 
@@ -264,8 +272,8 @@ def val(val_list, model):
     mse = 0
 
     for i, (img, target) in enumerate(val_loader):
-        if torch.cuda.is_available() and args.use_gpu:
-            img = img.cuda()
+        # if torch.cuda.is_available() and args.use_gpu:
+        img = img.cuda() if CUDA else img
         img = Variable(img)
 
         with torch.no_grad():
@@ -273,8 +281,8 @@ def val(val_list, model):
 
         target = target.sum().type(torch.FloatTensor)
 
-        if torch.cuda.is_available() and args.use_gpu:
-            target = target.cuda()
+        # if torch.cuda.is_available() and args.use_gpu:
+        target = target.cuda() if CUDA else target
 
         mae += abs(output.data.sum() - target)
         mse += (output.data.sum() - target).pow(2)
@@ -282,23 +290,22 @@ def val(val_list, model):
     N = len(val_loader)
     mae = mae / N
     mse = torch.sqrt(mse / N)
-    print('Val * MAE {mae:.3f} * MSE {mse:.3f}'
-          .format(mae=mae, mse=mse))
+    print('Val * MAE {mae:.3f} * MSE {mse:.3f}'.format(mae=mae, mse=mse))
 
     return mae, mse
 
 
-def test(test_list, model):
+def test(test_list: list, model):
     print('testing current model...')
-    test_loader = torch.utils.data.DataLoader(
-        dataset.listDataset(test_list,
-                            transform=transforms.Compose([
-                                transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                            std=[0.229, 0.224, 0.225]),
-                            ]), train=False),
-        num_workers=args.workers,
-        shuffle=False,
-        batch_size=args.batch_size)
+    transforms_ = transforms.Compose([transforms.ToTensor(),
+                                      transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                           std=[0.229, 0.224, 0.225]), ])
+    dataset = mydataset.listDataset(test_list,
+                                    transform=transforms_, train=False)
+    test_loader = DataLoader(dataset,
+                             num_workers=args.workers,
+                             shuffle=False,
+                             batch_size=args.batch_size)
 
     model.eval()
 
@@ -306,16 +313,16 @@ def test(test_list, model):
     mse = 0
 
     for i, (img, target) in enumerate(test_loader):
-        if torch.cuda.is_available() and args.use_gpu:
-            img = img.cuda()
+        # if torch.cuda.is_available() and args.use_gpu:
+        img = img.cuda() if CUDA else img
         img = Variable(img)
 
         with torch.no_grad():
             output = model(img)
 
         target = target.sum().type(torch.FloatTensor)
-        if torch.cuda.is_available() and args.use_gpu:
-            target = target.cuda
+        # if torch.cuda.is_available() and args.use_gpu:
+        target = target.cuda if CUDA else target
 
         mae += abs(output.data.sum() - target)
         mse += (output.data.sum() - target).pow(2)
@@ -323,8 +330,7 @@ def test(test_list, model):
     N = len(test_loader)
     mae = mae / N
     mse = torch.sqrt(mse / N)
-    print('Test * MAE {mae:.3f} * MSE {mse:.3f} '
-          .format(mae=mae, mse=mse))
+    print('Test * MAE {mae:.3f} * MSE {mse:.3f} '.format(mae=mae, mse=mse))
 
 
 class AverageMeter(object):
@@ -347,4 +353,4 @@ class AverageMeter(object):
 
 
 if __name__ == '__main__':
-    main()
+    main(args)
