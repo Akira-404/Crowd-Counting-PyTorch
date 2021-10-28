@@ -14,9 +14,9 @@ class CSRNet(nn.Module):
         super(CSRNet, self).__init__()
         self.seen = 0
 
-        self.frontend = make_layers(_frontend_feat)
+        self.frontend = _make_layers(_frontend_feat)
         # cal_para(self.frontend)
-        self.backend = make_layers(_backend_feat, in_channels=512, dilation=True)
+        self.backend = _make_layers(_backend_feat, in_channels=512, dilation=True)
 
         self.output_layer = nn.Conv2d(64, 1, kernel_size=(1, 1))
 
@@ -55,7 +55,7 @@ class CSRNet(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
 
-def make_layers(cfg: list, in_channels: int = 3, batch_norm: bool = False, dilation: bool = False):
+def _make_layers(cfg: list, in_channels: int = 3, batch_norm: bool = False, dilation: bool = False):
     d_rate = 2 if dilation else 1
     layers = []
     for v in cfg:
