@@ -3,31 +3,33 @@ For training CSRNet teacher
 """
 import numpy as np
 import torch.nn as nn
-import torch
 from torchvision import models
-# from utils import save_net,load_net
-import time
+
+_frontend_feat = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512]
+_backend_feat = [512, 512, 512, 256, 128, 64]
 
 
 class CSRNet(nn.Module):
     def __init__(self, pretrained: bool = False):
         super(CSRNet, self).__init__()
         self.seen = 0
-        self.frontend_feat = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512]
-        self.backend_feat = [512, 512, 512, 256, 128, 64]
-        self.frontend = make_layers(self.frontend_feat)
+
+        self.frontend = make_layers(_frontend_feat)
         # cal_para(self.frontend)
-        self.backend = make_layers(self.backend_feat, in_channels=512, dilation=True)
+        self.backend = make_layers(_backend_feat, in_channels=512, dilation=True)
+
         self.output_layer = nn.Conv2d(64, 1, kernel_size=(1, 1))
+
         if pretrained:
             self._initialize_weights(mode='normal')
-            mod = models.vgg16(pretrained=True)
+            
+            vgg = models.vgg16(pretrained)
+            pretrain_keys = list(vgg.state_dict().keys())
             state_keys = list(self.frontend.state_dict().keys())
-            pretrain_keys = list(mod.state_dict().keys())
+
+            # loading vgg pretrained weights
             for i in range(len(self.frontend.state_dict().items())):
-                # self.frontend.state_dict().items()[i][1].data[:] = mod.state_dict().items()[i][1].data[:]
-                # print(mod.state_dict()[pretrain_keys[i]])
-                self.frontend.state_dict()[state_keys[i]].data = mod.state_dict()[pretrain_keys[i]].data
+                self.frontend.state_dict()[state_keys[i]].data = vgg.state_dict()[pretrain_keys[i]].data
         else:
             self._initialize_weights(mode='kaiming')
 
@@ -54,10 +56,7 @@ class CSRNet(nn.Module):
 
 
 def make_layers(cfg: list, in_channels: int = 3, batch_norm: bool = False, dilation: bool = False):
-    if dilation:
-        d_rate = 2
-    else:
-        d_rate = 1
+    d_rate = 2 if dilation else 1
     layers = []
     for v in cfg:
         if v == 'M':
@@ -74,10 +73,13 @@ def make_layers(cfg: list, in_channels: int = 3, batch_norm: bool = False, dilat
 
 if __name__ == '__main__':
     net = CSRNet()
-    print(net)
-    with open('vgg.txt', 'w') as f:
-        f.write(str(net))
-    net_dict = net.state_dict()
-
-    for k, v in net_dict.items():
+    # print(net)
+    # with open('vgg.txt', 'w') as f:
+    #     f.write(str(net))
+    net_frontend_dict = net.frontend.state_dict()
+    net_backend_dict = net.backend.state_dict()
+    for k, v in net_frontend_dict.items():
+        print(k, "-->", np.shape(v))
+    print()
+    for k, v in net_backend_dict.items():
         print(k, "-->", np.shape(v))
