@@ -1,0 +1,15 @@
+
+.idea/
+__pycache__/
+models/
+
+BL_models/
+CSRNet_models/
+
+preprocess/train_val_test_json/*
+
+test_code/*
+
+_README.md
+out.jpg
+img.png
