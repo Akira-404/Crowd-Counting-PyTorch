@@ -1,6 +1,7 @@
 """
 For training CSRNet teacher
 """
+import numpy as np
 import torch.nn as nn
 import torch
 from torchvision import models
@@ -9,7 +10,7 @@ import time
 
 
 class CSRNet(nn.Module):
-    def __init__(self, pretrained: bool = True):
+    def __init__(self, pretrained: bool = False):
         super(CSRNet, self).__init__()
         self.seen = 0
         self.frontend_feat = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512]
@@ -69,3 +70,14 @@ def make_layers(cfg: list, in_channels: int = 3, batch_norm: bool = False, dilat
                 layers += [conv2d, nn.ReLU(inplace=True)]
             in_channels = v
     return nn.Sequential(*layers)
+
+
+if __name__ == '__main__':
+    net = CSRNet()
+    print(net)
+    with open('vgg.txt', 'w') as f:
+        f.write(str(net))
+    net_dict = net.state_dict()
+
+    for k, v in net_dict.items():
+        print(k, "-->", np.shape(v))

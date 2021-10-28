@@ -1,6 +1,7 @@
 """
 Teacher model in SKT
 """
+import numpy as np
 import torch.nn as nn
 import torch
 from torchvision import models
@@ -75,3 +76,13 @@ def make_layers(cfg, in_channels=3, batch_norm=False, dilation=False):
                 layers += [conv2d, nn.ReLU(inplace=True)]
             in_channels = v
     return nn.Sequential(*layers)
+
+
+if __name__ == '__main__':
+    net = CSRNet()
+    print(net)
+    net_dict = net.state_dict()
+    with open('teacher_vgg.txt', 'w') as f:
+        f.write(str(net))
+    for k, v in net_dict.items():
+        print(k, "-->", np.shape(v))

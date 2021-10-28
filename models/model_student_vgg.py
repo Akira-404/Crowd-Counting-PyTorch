@@ -1,6 +1,7 @@
 """
 Student model (1/n-CSRNet) in SKT.
 """
+import numpy as np
 import torch.nn as nn
 import torch
 from torchvision import models
@@ -138,5 +139,16 @@ def feature_transform(inp: int, oup: int):
     return nn.Sequential(*layers)
 
 
-def pool_layers(ceil_mode:bool=True):
+def pool_layers(ceil_mode: bool = True):
     return nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=ceil_mode)
+
+
+if __name__ == '__main__':
+    net = CSRNet()
+    print(net)
+    with open('student_vgg.txt','w')as f:
+        f.write(str(net))
+    net_dict = net.state_dict()
+    for k, v in net_dict.items():
+        print(k, np.shape(v))
+
