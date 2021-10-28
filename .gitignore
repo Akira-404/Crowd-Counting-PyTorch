@@ -1,15 +1,16 @@
 
 .idea/
 __pycache__/
-models/
 
-BL_models/
-CSRNet_models/
+BL_models_weights/
+CSRNet_models_weights/
 
 preprocess/train_val_test_json/*
 
 test_code/*
-
+_train.sh
+_test.sh
 _README.md
 out.jpg
 img.png
+/weights/
