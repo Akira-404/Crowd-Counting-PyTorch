@@ -9,8 +9,16 @@ import torchvision.transforms.functional as F
 
 
 class listDataset(Dataset):
-    def __init__(self, root, shape=None, transform=None, train=False, seen=0,
-                 batch_size=1, num_workers=20, dataset='shanghai', shuffle=True):
+    def __init__(self,
+                 root:list,
+                 shape=None,
+                 transform=None,
+                 train: bool = False,
+                 seen: int = 0,
+                 batch_size: int = 1,
+                 num_workers: int = 20,
+                 dataset: str = 'shanghai',
+                 shuffle: bool = True):
         if train and dataset == 'shanghai':
             root = root * 4
         if shuffle:
@@ -30,7 +38,7 @@ class listDataset(Dataset):
     def __len__(self):
         return self.nSamples
 
-    def __getitem__(self, index):
+    def __getitem__(self, index:int):
         assert index <= len(self), 'index range error'
 
         img_path = self.lines[index]
