@@ -7,23 +7,29 @@ import torch
 from torchvision import models
 from utils import save_net, load_net, cal_para
 
+_frontend_feat = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512]
+_backend_feat = [512, 512, 512, 256, 128, 64]
+
 
 class CSRNet(nn.Module):
-    def __init__(self, pretrained=False):
+    def __init__(self, pretrained: bool = False):
         super(CSRNet, self).__init__()
         self.seen = 0
-        self.frontend_feat = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512]
-        self.backend_feat = [512, 512, 512, 256, 128, 64]
-        self.frontend = make_layers(self.frontend_feat)
-        self.backend = make_layers(self.backend_feat, in_channels=512, dilation=True)
-        self.output_layer = nn.Conv2d(64, 1, kernel_size=1)
+
+        self.frontend = make_layers(_frontend_feat)
+        self.backend = make_layers(_backend_feat, in_channels=512, dilation=True)
+        self.output_layer = nn.Conv2d(64, 1, kernel_size=(1, 1))
         self._initialize_weights()
         self.features = []
         if pretrained:
             print('load vgg pretrained model')
-            mod = models.vgg16(pretrained=True)
+            vgg = models.vgg16(pretrained)
+            pretrain_keys = list(vgg.state_dict().keys())
+            state_keys = list(self.frontend.state_dict().keys())
+
             for i in range(len(self.frontend.state_dict().items())):
-                self.frontend.state_dict().items()[i][1].data[:] = mod.state_dict().items()[i][1].data[:]
+                # self.frontend.state_dict().items()[i][1].data[:] = vgg.state_dict().items()[i][1].data[:]
+                self.frontend.state_dict()[state_keys[i]].data = vgg.state_dict()[pretrain_keys[i]].data
 
     def forward(self, x):
         self.features = []
@@ -59,17 +65,18 @@ class CSRNet(nn.Module):
                 self._modules['backend']._modules[name].register_forward_hook(get)
 
 
-def make_layers(cfg, in_channels=3, batch_norm=False, dilation=False):
-    if dilation:
-        d_rate = 2
-    else:
-        d_rate = 1
+def make_layers(cfg: list, in_channels: int = 3, batch_norm: bool = False, dilation: bool = False):
+    # if dilation:
+    #     d_rate = 2
+    # else:
+    #     d_rate = 1
+    d_rate = 2 if dilation else 1
     layers = []
     for v in cfg:
         if v == 'M':
             layers += [nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)]
         else:
-            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=d_rate, dilation=d_rate)
+            conv2d = nn.Conv2d(in_channels, v, kernel_size=(3, 3), padding=d_rate, dilation=(d_rate, d_rate))
             if batch_norm:
                 layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
             else:
