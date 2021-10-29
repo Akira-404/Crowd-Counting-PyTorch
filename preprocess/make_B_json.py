@@ -11,7 +11,7 @@ parser.add_argument('--root', '-r', type=str, default='/home/cv/AI_Data/Shanghai
 args = parser.parse_args()
 
 
-def get_train(root):
+def get_train(root:str):
     path = os.path.join(root, 'part_B', 'train_data', 'images')
     filenames = os.listdir(path)
     pathname = [os.path.join(path, filename) for filename in filenames]
@@ -19,7 +19,7 @@ def get_train(root):
         json.dump(pathname, f)
 
 
-def get_val(root):
+def get_val(root:str):
     """
     Validation set follows part_A_val.json in CSRNet
     https://github.com/leeyeehoo/CSRNet-pytorch
@@ -35,7 +35,7 @@ def get_val(root):
         json.dump(new_val, f)
 
 
-def get_test(root):
+def get_test(root:str):
     path = os.path.join(root, 'part_B', 'test_data', 'images')
     filenames = os.listdir(path)
     pathname = [os.path.join(path, filename) for filename in filenames]
