@@ -8,10 +8,9 @@ from matplotlib import pyplot as plt
 from scipy.ndimage.filters import gaussian_filter
 import scipy
 import scipy.spatial
-import cv2
 
 parser = argparse.ArgumentParser(description='Files path')
-parser.add_argument('-r', '--root', default='/home/cv/AI_Data/ShanghaiTech/ShanghaiTech/', type=str,
+parser.add_argument('-r', '--root', default='/home/cv/AI_Data/ShanghaiTech/ShanghaiTech', type=str,
                     help='Dataset root path')
 
 args = parser.parse_args()
@@ -43,24 +42,22 @@ def gaussian_filter_density(gt):
     return density
 
 
-# root = '/home/ubuntu/AI_Data/ShanghaiTech/ShanghaiTech'
-
 # now generate the ShanghaiA's ground truth
-part_A_train = os.path.join(args.root, 'part_A/train_data', 'images')
-part_A_test = os.path.join(args.root, 'part_A/test_data', 'images')
-part_B_train = os.path.join(args.root, 'part_B/train_data', 'images')
-part_B_test = os.path.join(args.root, 'part_B/test_data', 'images')
+part_A_train = os.path.join(args.root, 'part_A/train_data')
+part_A_test = os.path.join(args.root, 'part_A/test_data')
+part_B_train = os.path.join(args.root, 'part_B/train_data')
+part_B_test = os.path.join(args.root, 'part_B/test_data')
 path_sets = [part_A_train, part_A_test]
 img_paths = []
 
 for path in path_sets:
-    for img_path in glob.glob(os.path.join(path, '*.jpg')):
+    for img_path in glob.glob(os.path.join(path, 'images', '*.jpg')):
         img_paths.append(img_path)
 
 for img_path in img_paths:
     # for every image
     print('image path: ', img_path)
-    mat = io.loadmat(img_path.replace('.jpg', '.mat').replace('images', 'ground-truth').replace('IMG_', 'GT_IMG_'))
+    mat = io.loadmat(img_path.replace('images', 'ground-truth').replace('IMG_', 'GT_IMG_').replace('.jpg', '.mat'))
     img = plt.imread(img_path)
     k = np.zeros((img.shape[0], img.shape[1]))
 
@@ -73,7 +70,10 @@ for img_path in img_paths:
 
     k = gaussian_filter_density(k)
     # save the Density Maps GT as h5 format
-    with h5py.File(img_path.replace('.jpg', '.h5').replace('images', 'ground-truth'), 'w') as hf:
+
+    if os.path.exists(os.path.join(args.root, 'ground-truth-h5')) is False:
+        os.mkdir(os.path.join(args.root, 'ground-truth-h5'))
+    with h5py.File(img_path.replace('images', 'ground-truth-h5').replace('.jpg', '.h5'), 'w') as hf:
         hf['density'] = k
 
 # now generate the ShanghaiB's ground truth
@@ -81,19 +81,22 @@ path_sets = [part_B_train, part_B_test]
 
 img_paths = []
 for path in path_sets:
-    for img_path in glob.glob(os.path.join(path, '*.jpg')):
+    for img_path in glob.glob(os.path.join(path, 'images', '*.jpg')):
         img_paths.append(img_path)
 
 for img_path in img_paths:
     print(img_path)
-    mat = io.loadmat(img_path.replace('.jpg', '.mat').replace('images', 'ground_truth').replace('IMG_', 'GT_IMG_'))
+    mat = io.loadmat(img_path.replace('images', 'ground-truth').replace('IMG_', 'GT_IMG_').replace('.jpg', '.mat'))
     img = plt.imread(img_path)
     k = np.zeros((img.shape[0], img.shape[1]))
     gt = mat["image_info"][0, 0][0, 0][0]
     for i in range(0, len(gt)):
         if int(gt[i][1]) < img.shape[0] and int(gt[i][0]) < img.shape[1]:
             k[int(gt[i][1]), int(gt[i][0])] = 1
+
     k = gaussian_filter(k, 15)  # fix 15
 
-    with h5py.File(img_path.replace('.jpg', '.h5').replace('images', 'ground_truth'), 'w') as hf:
+    if os.path.exists(os.path.join(args.root, 'ground-truth-h5')) is False:
+        os.mkdir(os.path.join(args.root, 'ground-truth-h5'))
+    with h5py.File(img_path.replace('images', 'ground-truth-h5').replace('.jpg', '.h5'), 'w') as hf:
         hf['density'] = k
