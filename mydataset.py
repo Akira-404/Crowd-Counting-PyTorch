@@ -8,9 +8,9 @@ from image import *
 import torchvision.transforms.functional as F
 
 
-class listDataset(Dataset):
+class ListDataset(Dataset):
     def __init__(self,
-                 root:list,
+                 root: list,
                  shape=None,
                  transform=None,
                  train: bool = False,
@@ -19,6 +19,7 @@ class listDataset(Dataset):
                  num_workers: int = 20,
                  dataset: str = 'shanghai',
                  shuffle: bool = True):
+
         if train and dataset == 'shanghai':
             root = root * 4
         if shuffle:
@@ -38,16 +39,17 @@ class listDataset(Dataset):
     def __len__(self):
         return self.nSamples
 
-    def __getitem__(self, index:int):
+    def __getitem__(self, index: int):
         assert index <= len(self), 'index range error'
 
         img_path = self.lines[index]
 
         if self.dataset == 'ucf_test':
-            # test in UCF
+            # test in UCF data
             img, target = load_ucf_ori_data(img_path)
         else:
-            img, target = load_data(img_path, self.train, self.dataset)
+            # test in shanghai data
+            img, target = load_shanghai_data(img_path, self.train)
 
         if self.transform is not None:
             img = self.transform(img)
