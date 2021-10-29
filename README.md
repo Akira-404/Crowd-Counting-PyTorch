@@ -6,7 +6,7 @@
 
 ShanghaiTech：[Kaggle](https://www.kaggle.com/) 官网可下载
 
-UCF-QNRF：[UCF-QNRF](https://www.crcv.ucf.edu/research/data-sets/ucf-qnrf/) 官网可下载
+UCF-QNRF：[UCF-QNRF](https://www.crcv.ucf.edu/data/ucf-qnrf/) 官网可下载
 
 ## Prerequisites
 
