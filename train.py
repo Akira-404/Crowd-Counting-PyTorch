@@ -26,16 +26,15 @@ parser.add_argument('--val_json', metavar='VAL', default='./preprocess/A_val.jso
                     help='path to val json')
 parser.add_argument('--test_json', metavar='TEST', default='./preprocess/A_test.json',
                     help='path to test json')
+
 parser.add_argument('--lr', default=0.0004, type=float,
                     help='learning rate')
-# parser.add_argument('--teacher', '-t', default=None, type=str,
-#                     help='teacher net version')
+
 parser.add_argument('--teacher_ckpt', '-tc', default='./CSRNet_models_weights/partA_teacher.pth.tar', type=str,
                     help='teacher checkpoint')
-# parser.add_argument('--student', '-s', default=None, type=str,
-#                     help='student net version')
 parser.add_argument('--student_ckpt', '-sc', default='./CSRNet_models_weights/partA_student.pth.tar', type=str,
                     help='student checkpoint')
+
 parser.add_argument('--lamb_fsp', '-laf', type=float, default=0.5,
                     help='weight of dense fsp loss')
 parser.add_argument('--lamb_cos', '-lac', type=float, default=0.5,
@@ -184,13 +183,10 @@ def train(train_list: list, teacher, student, criterion, optimizer, epoch):
     for i, (img, target) in enumerate(train_loader):
         data_time.update(time.time() - end)
 
-        # if torch.cuda.is_available() and args.use_gpu:
         img = img.cuda() if CUDA else img
         img = Variable(img)
 
         target = target.type(torch.FloatTensor)
-
-        # if torch.cuda.is_available() and args.use_gpu:
         target = target.cuda() if CUDA else target
         target = Variable(target)
 
