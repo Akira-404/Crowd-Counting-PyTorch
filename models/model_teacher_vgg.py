@@ -16,13 +16,13 @@ class CSRNet(nn.Module):
         super(CSRNet, self).__init__()
         self.seen = 0
 
-        self.frontend = make_layers(_frontend_feat)
-        self.backend = make_layers(_backend_feat, in_channels=512, dilation=True)
+        self.frontend = _make_layers(_frontend_feat)
+        self.backend = _make_layers(_backend_feat, in_channels=512, dilation=True)
         self.output_layer = nn.Conv2d(64, 1, kernel_size=(1, 1))
-        self._initialize_weights()
         self.features = []
         if pretrained:
             print('load vgg pretrained model')
+            self._initialize_weights(mode='normal')
             vgg = models.vgg16(pretrained)
             pretrain_keys = list(vgg.state_dict().keys())
             state_keys = list(self.frontend.state_dict().keys())
@@ -30,6 +30,8 @@ class CSRNet(nn.Module):
             for i in range(len(self.frontend.state_dict().items())):
                 # self.frontend.state_dict().items()[i][1].data[:] = vgg.state_dict().items()[i][1].data[:]
                 self.frontend.state_dict()[state_keys[i]].data = vgg.state_dict()[pretrain_keys[i]].data
+        else:
+            self._initialize_weights(mode='kaiming')
 
     def forward(self, x):
         self.features = []
@@ -40,10 +42,14 @@ class CSRNet(nn.Module):
         x = self.output_layer(x)
         return x
 
-    def _initialize_weights(self):
+    def _initialize_weights(self, mode: str):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.normal_(m.weight, std=0.01)
+                if mode == 'normal':
+                    nn.init.normal_(m.weight, std=0.01)
+                elif mode == 'kaiming':
+                    nn.init.kaiming_uniform_(m.weight, mode='fan_out', nonlinearity='relu')
+
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.BatchNorm2d):
@@ -65,7 +71,7 @@ class CSRNet(nn.Module):
                 self._modules['backend']._modules[name].register_forward_hook(get)
 
 
-def make_layers(cfg: list, in_channels: int = 3, batch_norm: bool = False, dilation: bool = False):
+def _make_layers(cfg: list, in_channels: int = 3, batch_norm: bool = False, dilation: bool = False):
     # if dilation:
     #     d_rate = 2
     # else:
