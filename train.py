@@ -163,9 +163,9 @@ def train(train_list: list, teacher, student, criterion, optimizer, epoch):
     data_time = AverageMeter()
 
     transform = transforms.Compose([transforms.ToTensor(),
-                                      transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                           std=[0.229, 0.224, 0.225])])
-    dataset = mydataset.listDataset(train_list,
+                                    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                         std=[0.229, 0.224, 0.225])])
+    dataset = mydataset.ListDataset(train_list,
                                     transform=transform,
                                     train=True,
                                     seen=student.seen)
@@ -248,9 +248,9 @@ def train(train_list: list, teacher, student, criterion, optimizer, epoch):
 def val(val_list: list, model):
     print('begin val')
     transform = transforms.Compose([transforms.ToTensor(),
-                                      transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                           std=[0.229, 0.224, 0.225])])
-    dataset = mydataset.listDataset(val_list,
+                                    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                         std=[0.229, 0.224, 0.225])])
+    dataset = mydataset.ListDataset(val_list,
                                     transform=transform,
                                     train=False)
     val_loader = DataLoader(dataset,
@@ -290,9 +290,9 @@ def val(val_list: list, model):
 def test(test_list: list, model):
     print('testing current model...')
     transform = transforms.Compose([transforms.ToTensor(),
-                                      transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                           std=[0.229, 0.224, 0.225]), ])
-    dataset = mydataset.listDataset(test_list,
+                                    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                         std=[0.229, 0.224, 0.225]), ])
+    dataset = mydataset.ListDataset(test_list,
                                     transform=transform, train=False)
     test_loader = DataLoader(dataset,
                              num_workers=args.workers,

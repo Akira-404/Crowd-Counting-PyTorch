@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image
 from matplotlib import pyplot as plt
 import torch
+from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from torchvision import datasets, transforms
 
@@ -21,13 +22,15 @@ from utils import cal_para, crop_img_patches, get_use_time
 
 parser = argparse.ArgumentParser(description='PyTorch CSRNet')
 
-parser.add_argument('--test_json', '-tj', metavar='TEST', default='preprocess/A_test.json',
+parser.add_argument('--test_json', '-tj', metavar='TEST', default='preprocess/train_val_test_json/A_test.json',
                     help='path to test json')
-parser.add_argument('--dataset', '-d', default='', type=str,
-                    help='Shanghai/UCF/Other')
+parser.add_argument('--dataset', '-d', default='Shanghai', type=str,
+                    help='test dataset:Shanghai/UCF/Other')
 parser.add_argument('--checkpoint', '-c', metavar='CHECKPOINT', default='CSRNet_models_weights/partA_student.pth.tar',
                     type=str,
                     help='path to the checkpoint')
+parser.add_argument('--img', '-i', type=str, default='img.png',
+                    help='input test image path')
 parser.add_argument('--version', '-v', default='quarter_vgg', type=str,
                     help='vgg/quarter_vgg')
 parser.add_argument('--transform', '-t', default=True, type=bool,
@@ -90,9 +93,12 @@ def main(args):
     if args.dataset == 'UCF':
         test_ucf(model)
     elif args.dataset == 'Shanghai':
-        test(model)
+        test_shanghai(model)
     else:
-        img_path = './img.png'
+        img_path = args.img
+        if os.path.exists(args.img) is False:
+            print(f'img path:{args.img} is error ')
+            exit(0)
         ret = run_model(img_path, model)
         img = cv2.imread(img_path)
         cv2.putText(img, 'people num:{}'.format(ret), (20, 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1)
@@ -101,20 +107,18 @@ def main(args):
         cv2.waitKey(0)
 
 
-def test(model):
+def test_shanghai(model):
     print('begin test')
 
     with open(args.test_json, 'r') as outfile:
         test_list = json.load(outfile)
 
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225]),
-    ])
+    transform = transforms.Compose([transforms.ToTensor(),
+                                    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                         std=[0.229, 0.224, 0.225])])
     h5_set = []
     for test_item in test_list:
-        h5_set.append(test_item.replace('images', 'ground_truth').replace('jpg', 'h5'))
+        h5_set.append(test_item.replace('images', 'ground-truth-h5').replace('jpg', 'h5'))
 
     mae = 0
     mse = 0
@@ -145,7 +149,6 @@ def test(model):
                                    weight='bold',
                                    )  # 字体属性设置
                      )
-            # print('model out:', output.data.sum())
             mae += abs(float(output.data.sum()) - float(density_img.sum()))
             mse += (float(output.data.sum()) - float(density_img.sum())) ** 2
 
@@ -164,10 +167,10 @@ def test(model):
                                    weight='bold',
                                    )  # 字体属性设置
                      )
-
+            print(f'idx:{i} | MAE:{mae} | MSE:{mse}')
             # plt.savefig("./img_out/part_B/{}.jpg".format(i))
-            # plt.show()
-            # plt.cla()
+            plt.show()
+            plt.cla()
 
     N = len(test_list)
     mae = mae / N
@@ -179,17 +182,12 @@ def test_ucf(model):
     print('begin test')
     with open(args.test_json, 'r') as outfile:
         test_list = json.load(outfile)
-    test_loader = torch.utils.data.DataLoader(
-        mydataset.listDataset(test_list,
-                              transform=transforms.Compose([
-                                  transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                              std=[0.229, 0.224, 0.225]),
-                              ]),
-                              train=False,
-                              dataset='ucf_test',
-                              ),
-        shuffle=False,
-        batch_size=1)
+
+    transform = transforms.Compose([transforms.ToTensor(),
+                                    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                         std=[0.229, 0.224, 0.225])])
+    dataset = mydataset.listDataset(test_list, transform=transform)
+    test_loader = torch.utils.data.DataLoader(dataset, shuffle=False, batch_size=1)
 
     model.eval()
 
