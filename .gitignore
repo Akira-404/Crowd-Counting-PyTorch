@@ -14,3 +14,5 @@ _README.md
 out.jpg
 img.png
 /weights/
+models/_vgg.txt
+models/_model_vgg.py
