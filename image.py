@@ -1,16 +1,14 @@
 import random
-import os
 from PIL import Image, ImageFilter, ImageDraw
 import numpy as np
 import h5py
 from PIL import ImageStat
 import cv2
-import time
 
 
-def load_data(img_path, train=True, dataset='shanghai'):
-    """ Load data
-
+def load_data(img_path: str, train: bool = True, dataset: bool = 'shanghai'):
+    """
+    Load data
     Use crop_ratio between 0.5 and 1.0 for random crop
     """
     gt_path = img_path.replace('.jpg', '.h5').replace('images', 'ground_truth')
@@ -41,9 +39,9 @@ def load_data(img_path, train=True, dataset='shanghai'):
     return img, target
 
 
-def load_ucf_ori_data(img_path):
-    """ Load original UCF-QNRF data for testing
-
+def load_ucf_ori_data(img_path: str):
+    """
+    Load original UCF-QNRF data for testing
     """
     gt_path = img_path.replace('.jpg', '.h5').replace('images', 'ground_truth')
     img = Image.open(img_path).convert('RGB')
@@ -52,9 +50,9 @@ def load_ucf_ori_data(img_path):
     return img, target
 
 
-def reshape_target(target, down_sample=3):
-    """ Down sample GT to 1/8
-
+def reshape_target(target: np.ndarry, down_sample: int = 3) -> np.ndarray:
+    """
+    Down sample GT to 1/8
     """
     height = target.shape[0]
     width = target.shape[1]
@@ -66,5 +64,3 @@ def reshape_target(target, down_sample=3):
         # width = int(width/2)
     target = cv2.resize(target, (width, height), interpolation=cv2.INTER_CUBIC) * (2 ** (down_sample * 2))
     return target
-
-
