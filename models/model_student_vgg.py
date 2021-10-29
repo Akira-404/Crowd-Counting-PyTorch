@@ -25,20 +25,20 @@ class CSRNet(nn.Module):
             self.transform0_0 = _feature_transform(channel[0], 64)
         self.conv0_1 = _conv_layers(channel[0], channel[0])
 
-        self.pool0 = pool_layers()
+        self.pool0 = _pool_layers()
         if transform:
             self.transform1_0 = _feature_transform(channel[0], 64)
         self.conv1_0 = _conv_layers(channel[0], channel[1])
         self.conv1_1 = _conv_layers(channel[1], channel[1])
 
-        self.pool1 = pool_layers()
+        self.pool1 = _pool_layers()
         if transform:
             self.transform2_0 = _feature_transform(channel[1], 128)
         self.conv2_0 = _conv_layers(channel[1], channel[2])
         self.conv2_1 = _conv_layers(channel[2], channel[2])
         self.conv2_2 = _conv_layers(channel[2], channel[2])
 
-        self.pool2 = pool_layers()
+        self.pool2 = _pool_layers()
         if transform:
             self.transform3_0 = _feature_transform(channel[2], 256)
         self.conv3_0 = _conv_layers(channel[2], channel[3])
@@ -134,23 +134,7 @@ def _feature_transform(inp: int, oup: int):
     return nn.Sequential(conv2d, relu)
 
 
-# conv_layers+feature_gransform
-# def _conv_layers(inp: int, oup: int, dilation: bool = False):
-#     # conv2d = nn.Conv2d(inp, oup, kernel_size=(1, 1))
-#
-#     kernel_size = (3,3)
-#     d_rate = 1
-#     padding = 0
-#     if dilation:
-#         d_rate = 2
-#         kernel_size = (3, 3)
-#         padding = d_rate
-#     conv2d = nn.Conv2d(inp, oup, kernel_size=kernel_size, padding=padding, dilation=(d_rate, d_rate))
-#     relu = nn.ReLU(inplace=True)
-#     return nn.Sequential(conv2d, relu)
-
-
-def pool_layers(ceil_mode: bool = True):
+def _pool_layers(ceil_mode: bool = True):
     return nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=ceil_mode)
 
 
