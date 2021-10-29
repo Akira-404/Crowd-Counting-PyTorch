@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<!-- saved from url=(0026)http://192.168.86.7:24430/ -->
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>EasyEdge</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="/js_css/src.abe89445.css">
+    <link rel="icon shortcut" href="http://ai.baidu.com/favicon.ico" type="image/x-icon">
+</head>
+
+<body>
+    <div class="container">
+        <div class="left">
+            <div class="wrapper-title">
+                <p id="info">【宏景科技】<span style="margin-right: 8px"></span>人群统计</p>
+            </div>
+            <div class="img-wrapper"> <input id="upload" type="file" accept="image/*">
+                <div class="img-container"></div>
+                <div class="canvas-container"></div>
+                <div class="img-mask-wrapper"></div>
+                <div class="upload-mask"> <img class="upload-logo" src="/js_css/img.png" alt="">
+                    <p class="tip-upload">点此上传图片</p>
+                </div>
+                <div id="video-controller"> <input type="range" id="time" name="time" min="0" max="100" value="0">
+                    <div class="video-controller__content"> <a id="pause" href="javascript:;"></a>
+                        <p><span id="time_now">00:00</span>/<span id="time_duration">00:00</span></p>
+                        <p> </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="right">
+            <div class="wrapper-title">
+                <div class="range-wrapper"> <span>调整阈值</span> <input type="range" min="0" max="100" id="range"
+                        value="50">
+                    <div class="cover-input">
+                        <div class="origin"> <span>当前阈值: <span class="threshold">0.3</span></span> <span
+                                class="update">修改</span> </div>
+                        <div class="cover"> <input type="number" min="0" max="1" step="0.01" autofocus=""> <span
+                                class="confirm">确认</span> <span class="cancel">取消</span> </div>
+                    </div>
+                </div>
+                <p class="threshold-text"> <span>最佳阈值: <span class="threshold">0.3</span></span> </p>
+            </div>
+            <ul class="shown-list">
+                <li class="title"><span>label</span><span>置信度</span></li>
+                <div class="content">
+                    <ul></ul>
+                    <div class="content-tip">请上传文件后查看识别结果</div>
+                </div>
+            </ul>
+        </div>
+        <div class="loading">
+            <div class="loading-mask"></div>
+            <div class="tip-wrapper"> <span class="tip"></span>
+                <div class="spinner">
+                    <div class="bounce1"></div>
+                    <div class="bounce2"></div>
+                    <div class="bounce3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/js_css/src.a4bb2932.js"></script>
+</body>
+
+</html>
