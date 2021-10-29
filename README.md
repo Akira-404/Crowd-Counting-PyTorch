@@ -20,7 +20,7 @@ PyTorch:1.9
 
 ```bash
 #ShanghaiTech dataset
-python preprocess/ShanghaiTech_GT_generation.py -root xxx/xxx/ShanghaiTech
+python preprocess/ShanghaiTech_GT_generation.py --root xxx/xxx/ShanghaiTech
 #生成的文件在xxx/xxx/ShanghaiTech/part_A(B)/train_data(test_data)/ground-truth-h5/下
 
 # UCF-QNRF
@@ -32,7 +32,7 @@ python preprocess/UCF_GT_generation.py --mode test
 
 ```bash
 python preprocess/make_A_json.py --root xxx/xxx/ShanghaiTech
-python preprocess/make_B_json.py -root xxx/xxx/ShanghaiTech
+python preprocess/make_B_json.py --root xxx/xxx/ShanghaiTech
 ```
 
 ## Training
