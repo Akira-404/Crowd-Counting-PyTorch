@@ -1,26 +1,23 @@
 import os
-
-import numpy
-import numpy as np
-from PIL import Image
-from typing import Optional
-from flask import Flask, jsonify, request, redirect, render_template
+import argparse
+import time
+import json
+import base64
 
 import cv2
+import torch
+import numpy as np
+from werkzeug.utils import secure_filename
 from models.model_vgg import CSRNet as CSRNet_vgg
 from models.model_student_vgg import CSRNet as CSRNet_student
-
-from utils import cal_para, crop_img_patches, get_use_time, base64_to_cvimage, get_result
-
-import torch
 from torch.autograd import Variable
 from torchvision import transforms
 
+from flask import Flask, jsonify, request, redirect, render_template
 from flask import Flask
 
-import argparse
-import json
-import time
+from utils import cal_para, crop_img_patches, get_use_time, base64_to_cvimage, get_result
+import shutil
 
 parser = argparse.ArgumentParser(description='PyTorch CSRNet')
 
@@ -52,7 +49,7 @@ args.seed = time.time()
 
 if CUDA_AVAILABLE:
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-    torch.cuda.manual_seed(args.seed)
+    torch.cuda.manual_seed(int(args.seed))
 
 if args.version == 'vgg':
     print('VGG')
@@ -85,14 +82,13 @@ if args.checkpoint:
     else:
         print("=> no checkpoint found at '{}'".format(args.checkpoint))
 
-'''
-input_data= {"image":"base64 code"}
-'''
+
+# clear download dir
 
 
 @get_use_time
 @app.route('/get_people_num', methods=['POST'])
-def get_people_num():
+def _get_people_num():
     params = request.json if request.method == "POST" else request.args
     print(type(params['image']))
     input_data = base64_to_cvimage(params["image"])
@@ -116,6 +112,65 @@ def get_people_num():
         output = model(img)
     ret_data = get_result(200, 'Success', int(output.data.sum()))
     return ret_data
+
+
+_allowed_extensions = ['png', 'PNG', 'jpg', 'JPG', 'jpeg']
+
+
+def _type_check(file_name: str) -> bool:
+    return '.' in file_name and file_name.rsplit('.', 1)[1] in _allowed_extensions
+
+
+_download_image = './static/images/download.jpg'
+
+
+@app.route('/upload', methods=['POST', 'GET'])
+def upload():
+    if request.method == 'POST':
+        f = request.files['file']
+        flag = _type_check(f.filename)
+        if not (f and flag):
+            return jsonify({'error': 1001,
+                            'message': 'image type:png,PNG,jpg,JPG,jpeg'})
+
+        basepath = os.path.dirname(__file__)
+        upload_path = os.path.join(basepath, 'static/images', secure_filename('download.jpg'))
+        f.save(upload_path)
+
+        people_num = _read_download_img(_download_image)
+        print(f'people number:{people_num}')
+        img = _return_img_stream(_download_image)
+        return render_template('upload.html', img=img, data=people_num)
+    return render_template('upload.html', img='./static/images/img.png')
+
+
+def _return_img_stream(img_local_path: str):
+    with open(img_local_path, 'rb') as img_f:
+        img_stream = img_f.read()
+        img_stream = base64.b64encode(img_stream)
+    return img_stream
+
+
+def _read_download_img(img: str) -> int:
+    im = cv2.imread(img)
+    transform = transforms.Compose([transforms.ToTensor(),
+                                    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                         std=[0.229, 0.224, 0.225])])
+    if im.shape[2] != 3:
+        im = cv2.cvtColor(im, cv2.COLOR_GRAY2RGB)
+    else:
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+
+    im = transform(im)
+    im = torch.unsqueeze(im, 0)
+
+    model.eval()
+    im = im.cuda() if CUDA_AVAILABLE else im
+    im = Variable(im)
+
+    with torch.no_grad():
+        output = model(im)
+    return int(output.data.sum())
 
 
 app.config['JSON_AS_ASCII'] = False

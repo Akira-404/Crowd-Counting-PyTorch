@@ -15,3 +15,5 @@ out.jpg
 img.png
 /weights/
 models/_vgg.txt
+
+static/images/download.jpg
