@@ -24,11 +24,12 @@ import time
 
 parser = argparse.ArgumentParser(description='PyTorch CSRNet')
 
-parser.add_argument('--test_json','-tj' ,metavar='TEST', default='preprocess/A_test.json',
+parser.add_argument('--test_json', '-tj', metavar='TEST', default='preprocess/A_test.json',
                     help='path to test json')
 parser.add_argument('--dataset', '-d', default='Shanghai', type=str,
                     help='Shanghai/UCF')
-parser.add_argument('--checkpoint', '-c', metavar='CHECKPOINT', default='CSRNet_models_weights/partA_student.pth.tar', type=str,
+parser.add_argument('--checkpoint', '-c', metavar='CHECKPOINT', default='CSRNet_models_weights/partA_student.pth.tar',
+                    type=str,
                     help='path to the checkpoint')
 parser.add_argument('--version', '-v', default='quarter_vgg', type=str,
                     help='vgg/quarter_vgg')
@@ -65,7 +66,7 @@ elif args.version == 'quarter_vgg':
 else:
     raise NotImplementedError()
 
-model = model.cuda() if CUDA_AVAILABLE else ...
+model = model.cuda() if CUDA_AVAILABLE else model
 
 if args.checkpoint:
     if os.path.isfile(args.checkpoint):
@@ -96,11 +97,9 @@ def get_people_num():
     print(type(params['image']))
     input_data = base64_to_cvimage(params["image"])
 
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225]),
-    ])
+    transform = transforms.Compose([transforms.ToTensor(),
+                                    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                         std=[0.229, 0.224, 0.225])])
     if input_data.shape[2] != 3:
         img = cv2.cvtColor(input_data, cv2.COLOR_GRAY2RGB)
     else:
@@ -110,7 +109,8 @@ def get_people_num():
     img = torch.unsqueeze(img, 0)
 
     model.eval()
-    img = Variable(img.cuda()) if CUDA_AVAILABLE else ...
+    img = img.cuda() if CUDA_AVAILABLE else img
+    img = Variable(img)
 
     with torch.no_grad():
         output = model(img)

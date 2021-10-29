@@ -169,8 +169,8 @@ def test_shanghai(model):
                      )
             print(f'idx:{i} | MAE:{mae} | MSE:{mse}')
             # plt.savefig("./img_out/part_B/{}.jpg".format(i))
-            plt.show()
-            plt.cla()
+            # plt.show()
+            # plt.cla()
 
     N = len(test_list)
     mae = mae / N
