@@ -6,25 +6,24 @@ from PIL import ImageStat
 import cv2
 
 
-def load_data(img_path: str, train: bool = True, dataset: bool = 'shanghai'):
+def load_shanghai_data(img_path: str, train: bool = True):
     """
     Load data
     Use crop_ratio between 0.5 and 1.0 for random crop
     """
-    gt_path = img_path.replace('.jpg', '.h5').replace('images', 'ground_truth')
+    gt_path = img_path.replace('images', 'ground-truth-h5').replace('.jpg', '.h5')
     img = Image.open(img_path).convert('RGB')
     gt_file = h5py.File(gt_path)
     target = np.asarray(gt_file['density'])
     if train:
-        if dataset == 'shanghai':
-            # 随机裁剪
-            crop_ratio = random.uniform(0.5, 1.0)
-            crop_size = (int(crop_ratio * img.size[0]), int(crop_ratio * img.size[1]))
-            dx = int(random.random() * (img.size[0] - crop_size[0]))
-            dy = int(random.random() * (img.size[1] - crop_size[1]))
+        # 随机裁剪
+        crop_ratio = random.uniform(0.5, 1.0)
+        crop_size = (int(crop_ratio * img.size[0]), int(crop_ratio * img.size[1]))
+        dx = int(random.random() * (img.size[0] - crop_size[0]))
+        dy = int(random.random() * (img.size[1] - crop_size[1]))
 
-            img = img.crop((dx, dy, crop_size[0] + dx, crop_size[1] + dy))
-            target = target[dy:crop_size[1] + dy, dx:crop_size[0] + dx]
+        img = img.crop((dx, dy, crop_size[0] + dx, crop_size[1] + dy))
+        target = target[dy:crop_size[1] + dy, dx:crop_size[0] + dx]
 
         if random.random() > 0.8:
             # 左右翻转图片
@@ -43,14 +42,14 @@ def load_ucf_ori_data(img_path: str):
     """
     Load original UCF-QNRF data for testing
     """
-    gt_path = img_path.replace('.jpg', '.h5').replace('images', 'ground_truth')
+    gt_path = img_path.replace('images', 'ground_truth').replace('.jpg', '.h5')
     img = Image.open(img_path).convert('RGB')
     gt_file = h5py.File(gt_path)
     target = np.asarray(gt_file['density'])
     return img, target
 
 
-def reshape_target(target: np.ndarry, down_sample: int = 3) -> np.ndarray:
+def reshape_target(target, down_sample: int = 3):
     """
     Down sample GT to 1/8
     """
