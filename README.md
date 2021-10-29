@@ -55,6 +55,16 @@ python test.py --img img.jpg
 
 Args具体情况请看代码
 
+## Server
+
+提供基于Flask框架的API端口测试
+
+```bash
+python server.py
+```
+
+
+
 ## HTML Testing
 
 提供了HTML 页面进行可视化调试，该部分正在进行开发测试

@@ -24,7 +24,7 @@ import time
 
 parser = argparse.ArgumentParser(description='PyTorch CSRNet')
 
-parser.add_argument('--test_json', metavar='TEST', default='preprocess/A_test.json',
+parser.add_argument('--test_json','-tj' ,metavar='TEST', default='preprocess/A_test.json',
                     help='path to test json')
 parser.add_argument('--dataset', '-d', default='Shanghai', type=str,
                     help='Shanghai/UCF')
