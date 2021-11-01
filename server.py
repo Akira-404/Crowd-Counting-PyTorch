@@ -83,9 +83,6 @@ if args.checkpoint:
         print("=> no checkpoint found at '{}'".format(args.checkpoint))
 
 
-# clear download dir
-
-
 @get_use_time
 @app.route('/get_people_num', methods=['POST'])
 def _get_people_num():
@@ -122,33 +119,39 @@ def _type_check(file_name: str) -> bool:
 
 
 _download_image = './static/images/download.jpg'
+_default_image = './static/images/default.png'
+_Empty = ""
+_index = "index.html"
 
 
-@app.route('/upload', methods=['POST', 'GET'])
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    return '使用ip/upload 进行检测'
+
+
+@app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if request.method == 'POST':
-        f = request.files['file']
-        flag = _type_check(f.filename)
-        if not (f and flag):
-            return jsonify({'error': 1001,
-                            'message': 'image type:png,PNG,jpg,JPG,jpeg'})
+        file = request.files['file']
+        is_type = _type_check(file.filename)
 
+        print(file.filename)
+        # check image
+        if file.filename == _Empty:
+            return render_template(_index, img=_default_image, data=0)
+        if is_type is False:
+            return render_template(_index, img=_default_image, data=0)
+
+        # save upload image to local dir
         basepath = os.path.dirname(__file__)
         upload_path = os.path.join(basepath, 'static/images', secure_filename('download.jpg'))
-        f.save(upload_path)
+        file.save(upload_path)
 
+        # detect image
         people_num = _read_download_img(_download_image)
         print(f'people number:{people_num}')
-        img = _return_img_stream(_download_image)
-        return render_template('upload.html', img=img, data=people_num)
-    return render_template('upload.html', img='./static/images/img.png')
-
-
-def _return_img_stream(img_local_path: str):
-    with open(img_local_path, 'rb') as img_f:
-        img_stream = img_f.read()
-        img_stream = base64.b64encode(img_stream)
-    return img_stream
+        return render_template(_index, img=_download_image, data=people_num)
+    return render_template(_index, img=_default_image, data=0)
 
 
 def _read_download_img(img: str) -> int:

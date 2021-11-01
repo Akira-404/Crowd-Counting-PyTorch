@@ -17,3 +17,4 @@ img.png
 models/_vgg.txt
 
 static/images/download.jpg
+templates/_upload.html

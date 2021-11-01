@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!-- <link rel="icon" href="../../../../favicon.ico"> -->
+
+    <title>Crowd Counting</title>
+
+    <!-- Bootstrap core CSS -->
+
+    <link href="../static/css/editor.css" rel="stylesheet">
+    <script src="../static/js/bootstrap.min.js"></script>
+
+    <!-- Custom styles for this template -->
+    <link href="../static/css/narrow-jumbotron.css" rel="stylesheet">
+
+</head>
+
+<body>
+    <form action="/upload" enctype='multipart/form-data' method='POST' id="formId">
+        <header class="header clearfix container" id="top-header">
+            <div class="container">
+                <nav>
+                    <ul class="nav nav-pills float-end">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#">Help <span class="sr-only">(current)</span></a>
+                        </li>
+                    </ul>
+                </nav>
+                <h1 class="text-muted">人群统计(Crowd Counting)</h1>
+            </div>
+        </header>
+        <section id="marketing">
+            <div class="container">
+                <div class="row marketing">
+                    <h2>简介</h2>
+                    
+                    <div class="col-lg-6" data-vvveb-disabled-area="">
+                        <p>人群统计用于检测大规模稠密人群总数,适用于100-1000人的环境</p>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <p>图片支持格式:PNG JPE JPEG</p>
+                        <p>图片最大尺寸:1920x1080</p>
+                        <p>图片最小尺寸:64x64</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="jumbotron container bg-light p-4" id="jumbotron">
+            <div class="container">
+                <p class="lead">
+                    人群个数：{{data}}
+                </p>
+                <img id='img' class="rounded mw-100 my-5" src="{{img}}">
+                <p>
+                    <a id='upload' class="btn btn-lg btn-primary" href="#" role="button" onclick="ClickInput()">上传图片</a>
+                </p>
+                <input name='file' type="file" style="display:none" id="InputUpload" onchange="changeInput()" />
+
+                <p>
+                    <a class="btn btn-lg btn-primary" href="#" role="button" onclick="document.getElementById('formId').submit()">开始检测</a>
+                </p>
+            </div>
+        </section>
+
+
+
+        <footer class="footer" id="page-footer">
+            <div class="container">
+                @宏景科技 大数据研究院</p>
+            </div>
+        </footer>
+
+    </form>
+</body>
+<!-- show upload image -->
+<script type="text/javascript">
+    function ClickInput() {
+        document.getElementById("InputUpload").click();
+    }
+
+    var showing = document.getElementById('img')
+    var upload = document.getElementById('InputUpload')
+
+    upload.onchange = function () {
+        var file = this.files[0];
+        if (upload.value == "") {
+            alert('请选择预测图片')
+        }
+        if (window.FileReader) {
+
+            var fr = new FileReader();
+            fr.readAsDataURL(file);
+
+            fr.onload = function (e) {
+                console.log(e.target);
+                console.log(this);
+                console.log(e.target.resul);
+                img.src = this.result;
+                // alert(this);
+            };
+        } else {
+            alert('not support filereader')
+        };
+    };
+</script>
+
+</html>
