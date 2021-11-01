@@ -63,11 +63,7 @@ Args具体情况请看代码
 python server.py
 ```
 
-
-
-## HTML Testing
-
-提供了HTML 页面进行可视化调试，该部分正在进行开发测试
+启动server.py以后，服务自带web测试页面，输入在浏览器输入http://192.168.xxx.xxx:24433/upload 即可进入测试页面进行测试。
 
 ## Models
 
