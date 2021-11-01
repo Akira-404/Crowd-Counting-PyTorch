@@ -29,7 +29,7 @@ parser.add_argument('--dataset', '-d', default='Shanghai', type=str,
 parser.add_argument('--checkpoint', '-c', metavar='CHECKPOINT', default='CSRNet_models_weights/partA_student.pth.tar',
                     type=str,
                     help='path to the checkpoint')
-parser.add_argument('--img', '-i', type=str, default='img.png',
+parser.add_argument('--img', '-i', type=str, default='',
                     help='input test image path')
 parser.add_argument('--version', '-v', default='quarter_vgg', type=str,
                     help='vgg/quarter_vgg')
